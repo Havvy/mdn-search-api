@@ -13,9 +13,9 @@ const Builder = function () {
         highlight: true,
         page: 1,
         response: "json",
-        topic: new Set(),
-        skill: new Set(),
-        type: new Set()
+        topics: new Set(),
+        skills: new Set(),
+        types: new Set()
     };
     return builder;
 };
@@ -164,6 +164,18 @@ Builder.prototype = {
             queryParams.push(["kumascript_macros", encodeURIComponent(macro)]);
         });
 
+        this.buildData.topics.forEach(function (macro) {
+            queryParams.push(["topic", encodeURIComponent(macro)]);
+        });
+
+        this.buildData.skills.forEach(function (macro) {
+            queryParams.push(["skill", encodeURIComponent(macro)]);
+        });
+
+        this.buildData.types.forEach(function (macro) {
+            queryParams.push(["type", encodeURIComponent(macro)]);
+        });
+
         if (!this.buildData.highlight) {
             queryParams.push(["highlight", "false"]);
         }
@@ -189,9 +201,9 @@ Builder.prototype = {
         const queryParams = this.buildQueryParams();
 
         if (queryParams.length === 0) {
-            return buildBaseUrl();
+            return this.buildBaseUrl();
         } else {
-            return buildBaseUrl + queryParamsString(queryParams);
+            return this.buildBaseUrl() + queryParamsString(queryParams);
         }
     }
 };
@@ -200,20 +212,26 @@ const responseIsValid = function (response) {
     return !("detail" in response);
 }
 
-function MdnSearchResponse (response) {
+function SearchResponse (response) {
     if (!responseIsValid(response)) {
-        throw new Error("Mdn Search Request was sent invalid. Reason: " + response.detail);
+        throw new Error("MDN search request was malformed. Reason: " + response.detail);
     }
 
-    const mdnSearchResponse = Object.create(MdnSearchResponse.prototype);
-    mdnSearchResponse.response = response;
-    return mdnSearchResponse;
+    const searchResponse = Object.create(SearchResponse.prototype);
+    searchResponse.response = response;
+    return searchResponse;
 }
 
-MdnSearchResponse.prototype = {
-    constructor: MdnSearchResponse,
+SearchResponse.prototype = {
+    constructor: SearchResponse,
 
     firstResult () {
-        return this.data.documents[0] || null;
+        return this.response.documents[0] || null;
     }
+}
+
+module.exports = {
+    Builder,
+    SearchResponse,
+    responseIsValid
 }
